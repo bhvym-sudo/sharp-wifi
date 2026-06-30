@@ -1,0 +1,2 @@
+/etc/scripts/rcm_voip&
+echo 1 > /proc/luna_watchdog/watchdog_flag

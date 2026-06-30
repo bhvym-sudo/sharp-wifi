@@ -1,0 +1,24 @@
+<%SendWebHeadStr(normal_2); %>
+<title>VOIP</title>
+<style type=text/css>
+@import url(/style/default.css);
+</style>
+<script language="javascript" src="/common.js"></script>
+</head>
+<body>
+ <blockquote>
+  <div align="left" style="padding-left:20px;"><br>
+   <div align="left">
+    <b><% multilang("3172" "LANG_VOIP_HELP_PAGE_1"); %></b>
+    <p><b><% multilang("3173" "LANG_VOIP_HELP_PAGE_2"); %></b></p>
+    <p><% multilang("3174" "LANG_VOIP_HELP_PAGE_3"); %></p>
+    <p><% multilang("3175" "LANG_VOIP_HELP_PAGE_4"); %></p>
+    <p><b><% multilang("3176" "LANG_VOIP_HELP_PAGE_5"); %></b></p>
+    <p><% multilang("3177" "LANG_VOIP_HELP_PAGE_6"); %></p>
+    <p><% multilang("3178" "LANG_VOIP_HELP_PAGE_7"); %></p>
+   </div>
+  </div>
+ </blockquote>
+</body>
+</html>
+<!-- add end by liuxiao 2008-01-22 -->

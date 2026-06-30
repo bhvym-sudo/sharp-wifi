@@ -1,0 +1,161 @@
+/* CSS Document */
+BODY
+{
+	MARGIN: 0px; 
+	PADDING-RIGHT: 0px; 
+	PADDING-LEFT: 0px; 
+	PADDING-TOP: 0px; 
+	PADDING-BOTTOM: 0px; 
+	FONT-SIZE: 12px;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+	/*TEXT-ALIGN: center;*/
+	background-color:#FFFFFF;
+}
+
+TABLE.flat
+{
+	border-collapse:collapse;
+	border-style:groove;
+	padding-left:2px;
+	padding-right:2px;
+}
+
+TR.hd 
+{
+	background-color:#808080;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+}
+TR.hdb 
+{
+	background-color:#808080;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+	font-weight: bold;
+}
+TR.sep
+{
+	display:none;
+}
+
+TD 
+{	
+	FONT-SIZE: 12px; 
+	LINE-HEIGHT: 150%;
+}
+TD.hd
+{
+	background-color:#f4f4f4;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+}
+TD.hdb 
+{
+	background-color:#f4f4f4;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+	font-weight: bold;
+}
+
+IFRAME
+{
+	BORDER-RIGHT: thin groove;
+	BORDER-TOP: thin groove;
+	BORDER-LEFT: thin groove;
+	BORDER-BOTTOM: thin groove;
+}
+
+A:LINK 
+{
+	COLOR: #1874CD;
+	TEXT-DECORATION: none;
+}
+A:VISITED 
+{
+	COLOR: #666;
+    TEXT-DECORATION: none;
+}
+A:HOVER 
+{
+	COLOR: #1874CD;
+	TEXT-DECORATION: none;
+}
+A:ACTIVE
+{
+	COLOR: #1874CD;
+	TEXT-DECORATION: none;
+}
+
+HR.sep
+{
+	color:#B5B5E6;
+}
+
+DIV.tip
+{
+}
+
+INPUT.button
+{
+	padding-left:8px;
+	padding-right:8px;
+	padding-top:2px;
+}
+
+.TABLE-REC
+{
+	padding-left:6px;
+	border:1px;
+	background-color:#FFFFFF;
+	border-collapse:collapse;
+	border-color:#CCCCCC;
+}
+
+.top-td{
+	 font-size:12px;
+	 color:black;
+	 background-color:#EDDBC6;
+	 FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+ }
+
+.table-td{
+	padding-left:6px;
+	FONT-FAMILY: Arial, Verdana, Geneva, Helvetica, sans-serif;
+}
+
+.TR-NORMAL
+{
+	CURSOR:	default;
+	FONT-SIZE:12px;
+	BACKGROUND-COLOR: #FFFFFF;
+}
+
+.TR-SELECT
+{
+	CURSOR: default;
+	FONT-SIZE:12px;
+	BACKGROUND-COLOR: #99CCFF;
+}
+
+.TR-HOT
+{
+	CURSOR:	hand;
+	FONT-SIZE:12px;
+	BACKGROUND-COLOR: #FFFFFF;
+}
+/* Added by Slim for bug#0003420 */
+INPUT#username1
+{
+	text-indent:20px;
+	display:block;
+}
+INPUT#psd1
+{
+	text-indent:20px;
+	display:block;
+}
+/* End of bug#0003420 */
+
+/* Added by peichao for mission#0007440 */
+INPUT#verification_code
+{
+	text-indent:20px;
+	display:block;
+}
+/* End of mission#0007440 */

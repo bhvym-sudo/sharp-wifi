@@ -1,0 +1,3 @@
+ftp=e8ftp
+telnet = admin/admin123
+

@@ -1,0 +1,25 @@
+<%SendWebHeadStr(normal_2); %>
+<title><% multilang("3551" "LANG_STD_DEVICE_TITLE"); %></title>
+<style type=text/css>
+@import url(/style/default.css);
+</style>
+<script language="javascript" src="/common.js"></script>
+</head>
+<body>
+ <blockquote>
+  <div align="left" style="padding-left:20px;"><br>
+   <div align="left">
+   <b><% multilang("3092" "LANG_DHCP_CONFIG_HELP_PAGE_0"); %></b>
+   <p><% multilang("3093" "LANG_DHCP_CONFIG_HELP_PAGE_1"); %>
+   <p><b><% multilang("3094" "LANG_DHCP_CONFIG_HELP_PAGE_2"); %></b><% multilang("3095" "LANG_DHCP_CONFIG_HELP_PAGE_3"); %>
+   <p><b><% multilang("3096" "LANG_DHCP_CONFIG_HELP_PAGE_4"); %></b><% multilang("3097" "LANG_DHCP_CONFIG_HELP_PAGE_5"); %>
+   <p><b><% multilang("3098" "LANG_DHCP_CONFIG_HELP_PAGE_6"); %></b><% multilang("3099" "LANG_DHCP_CONFIG_HELP_PAGE_7"); %>
+   <p><% multilang("3100" "LANG_DHCP_CONFIG_HELP_PAGE_8"); %>
+   <p><b><% multilang("3101" "LANG_DHCP_CONFIG_HELP_PAGE_9"); %></b><% multilang("3102" "LANG_DHCP_CONFIG_HELP_PAGE_A"); %>
+   <p><b><% multilang("3103" "LANG_DHCP_CONFIG_HELP_PAGE_B"); %></b> <% multilang("3104" "LANG_DHCP_CONFIG_HELP_PAGE_C"); %>
+   <p><b><% multilang("3105" "LANG_DHCP_CONFIG_HELP_PAGE_D"); %></b> <% multilang("3106" "LANG_DHCP_CONFIG_HELP_PAGE_E"); %>
+   <p><% multilang("3107" "LANG_DHCP_CONFIG_HELP_PAGE_F"); %>
+ </blockquote>
+</body>
+</html>
+<!-- add end by liuxiao 2008-01-22 -->

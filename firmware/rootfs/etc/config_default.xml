@@ -1,0 +1,20 @@
+<Config Name="ROOT">
+	<Dir Name="MIB_TABLE">
+		<Value Name="DEVICE_TYPE" Value="1"/>
+		<Value Name="OMCI_CUSTOM_ME" Value="262144" />
+		<Value Name="RTK_IGMP_DROPV1" Value="1"/>
+		<Value Name="MP_MODE" Value="12" />
+		<Value Name="TELNET_USER" Value="admin"/>
+		<Value Name="TELNET_PASSWD" Value="stdONU101"/>
+		<Value Name="SUSER_NAME" Value="admin"/>
+		<Value Name="SUSER_PASSWORD" Value="stdONU101"/>
+		<Value Name="USER_NAME" Value="user"/>
+		<Value Name="USER_PASSWORD" Value="user"/>
+		<Value Name="FW_GRADE" Value="2"/>
+		<Value Name="CWMP_CONFIGURABLE" Value="7"/>
+		<Value Name="WEB_VERIFICATION_CODE_ENABLE" Value="1"/>
+		<Value Name="WEB_LANGUAGE_SETTING_MODE" Value="2"/>
+		<Value Name="FORCE_DEFAULT_PWD_CHANGE" Value="10"/>
+		<Value Name="USER_LEVEL_ENABLE" Value="1"/>
+	</Dir>
+</Config>
