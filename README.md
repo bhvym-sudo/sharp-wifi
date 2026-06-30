@@ -161,6 +161,35 @@
 - i telnetted into the router and ran the command `cat /dev/new_rootfs.squashfs > dev/mtdblock13`, this command will flash the new fs into the mtdblock13 of router which is rootfs
 - Rebooted the router using `reboot`, waited for router startup and when i navigated to 192.168.1.1 on browser , the changes were made successfully, I got the dark grey background instead of default and my own title too.
 
+## Making /bin/sh permanent in the passwd file
+- Everytime i reboot the router , the changes i made to passwd file , gets reset again to /bin/cli, and then again I have to put my modified passwd file there
+- So I decided to make the /bin/sh permanent.
+- passwd file is in var dir which is loaded on ramfs, means some script or executable writes the changes to /var/passwd everytime the router reboots and starts
+- We just need to find that executable or script which is responsible for this and then reverse engineer it.
+- I ran the command to search for string /var/passwd in the strings of executables in /bin, I got interesting output which is bin/startup. There were other binaries too but this got my attention.
+- I loaded the bin/startup into ghidra , and searched for string /var/passwd, and i found out the exact function which was responsible for making change to /var/passwd file
+- I found the vfunction named fprintf(pFVar5,FORMAT3,&user_name,hash,&PW_HOME_DIR,&PW_CMD_SHELL);, notice the arguements of this function which matches the exact format in the passwd file admin:$1$$HjFU9UGk4tmzjQWcc9rcN1:0:0::/tmp:/bin/sh.
+- the variable PW_CMD_SHELL is our goal, we have to find its location and modify its value which is PW_CMD_SHELL="/bin/cli" changing it to "/bin/sh"
+- After digging deeper , I found out that this is a global variable and the binary is getting this variable from somewhere else.
+- So to look for this variable in root file system I ran the command `grep -rl 'PW_CMD_SHELL' .` and i got the output<br>
+  - ./lib/features/libvs_omciapi.so<br>
+  ./lib/libmib.so<br>
+  ./bin/boa<br>
+  ./bin/startup<br>
+  ./bin/eponoamd<br>
+  ./bin/cli<br>
+  ./bin/bin/boa<br>
+  ./bin/bin/startup<br>
+  ./bin/bin/eponoamd<br>
+  ./bin/bin/cli<br>
+  ./bin/bin/cwmpClient<br>
+  ./bin/cwmpClient<br>
+- libmib.so caught my attention, so I imported it into ghidra, searched for PW_CMD_SHELL and I got the variable , with "/bin/cli" written in front of it. that means the binary "startup" was importing variables from this library.
+- next thing I opened that address into bytes editor of ghidra, carefully changed /bin/cli to /bin/sh, cause i dont want to mess up the table.
+- Exported the libmib.so, as patched version, replaced it with the original libmib.so and flashed the patched firmware.
+- i rebooted the router , logged in using telnet and I got the linux shell which is now permanent.
+
+
 ## Whats "boa"
 - The Boa Web Server is a lightweight, single-tasking open-source HTTP server designed for Unix-like operating systems. Known for its low memory footprint and high speed, it was historically the go-to server for embedded environments, consumer routers, and Internet of Things (IoT) devices
 
