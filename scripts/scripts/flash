@@ -1,0 +1,273 @@
+#!/bin/ash
+#
+# usage: flash.sh [cmd] ...
+#
+
+DEFAULT_FILE="/etc/config_default.xml"
+DEFAULT_HS_FILE="/etc/config_default_hs.xml"
+LASTGOOD_FILE="/var/config/lastgood.xml"
+HIDDEN_FILE="/var/config/hidden.xml"
+LASTGOOD_HS_FILE="/var/config/lastgood_hs.xml"
+PROVINCE_DIR="/etc/province/config"
+HW_PROVINCE_NAME="HW_PROVINCE_NAME"
+BACKUP_SUFFIX="bak"
+CHK_FILE="/tmp/lastgood_checkfile"
+HIDDEN_HS_FILE="/var/config/hidden_hs.xml"
+
+# for array type in hw_setting
+specific_mib_patten="(^HW(_|_WLAN0_|_WLAN1_|_WLAN2_)TX_POWER*)|(^HW_FON_KEYWORD$)"
+
+rename_mib_patten="^HW_(NIC[0-1]|WLAN[0-1]_WLAN)_ADDR"
+rename_mib_name="ELAN_MAC_ADDR"
+
+hw_mib="^HW_|^SUPER_NAME$|^SUPER_PASSWORD$|^BOOT_MODE$|^ELAN_MAC_ADDR#|^WLAN_MAC_ADD$|^WAN_PHY_PORT$|^WIFI_SUPPORT$|^BYTE$|^WORD$|^DWORD$|^INT1$|^INT2$"
+var=""
+
+getProvinceConfigName() {
+	ctc_prov=$( /bin/xmlconfig -g ${HW_PROVINCE_NAME} 2> /dev/null | sed "s/${HW_PROVINCE_NAME}=//" )
+	if [ "${ctc_prov}" = "" -o "${ctc_prov:0:3}" = "GET" ]; then
+		ctc_prov='_'
+	fi
+	cfg_file=${PROVINCE_DIR}_${ctc_prov}.xml
+	echo ${cfg_file}
+}
+
+get_cmp_tool(){
+	if [ -f "/bin/cmp" ]; then
+		echo "/bin/cmp"
+		return 0
+	elif [ -f "/bin/diff" ]; then
+		echo "/bin/diff"
+		return 0
+	fi
+	return -1
+}
+
+check_space(){
+	if [ "${1}" = "" -o ! -f ${1} ]; then
+		_FILE_PATH="/var/config"
+		file_size=100
+	else
+		_FILE_NAME="${1}"
+		_FILE_PATH=${_FILE_NAME%/*}
+		output_result=$(ls -s ${_FILE_NAME} )
+		set ${output_result}
+		file_size=${1}
+	fi
+	output_result=$( df ${_FILE_PATH} )
+	set ${output_result}
+	space_size=${11}
+	whole_space=${9}
+	if [ "${whole_space}" -gt "1000" ]; then
+		file_size=`expr ${file_size} + ${file_size}`
+	fi
+	if [ ${space_size} -lt ${file_size} -o ${space_size} = "0" ]; then
+		echo "FATAL ERROR: Not enough space ${space_size}/${file_size}"
+		return  1
+	fi
+	return 0
+}
+
+reset_check() {
+	ARG="$1"
+	output_result=$( rm ${LASTGOOD_FILE}_${BACKUP_SUFFIX}  2> /dev/null )
+	cmp_tool=$( get_cmp_tool )
+	if [ "$?" != "0" ]; then
+		return -1
+	fi
+	index=0
+
+	cfg_file=$( getProvinceConfigName )
+	output_result=$( /bin/xmlconfig -def_mib )
+	output_result=$( [ -f ${cfg_file} ] && /bin/xmlconfig -c ${cfg_file} )
+	if [ "$?" != "0" ]; then
+		return -1
+	fi
+	output_result=$( /bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file} && /bin/xmlconfig -of $ARG ${CHK_FILE}  )
+	cmp_str=$( ${cmp_tool} ${LASTGOOD_FILE} ${CHK_FILE} 2> /dev/null )
+	while [ "${cmp_str}" != "" ]
+	do
+		output_result=$( cp -f ${CHK_FILE} ${LASTGOOD_FILE} 2> /dev/null )
+		output_result=$( /bin/xmlconfig -def_mib )
+		output_result=$( /bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file} && /bin/xmlconfig -of $ARG ${CHK_FILE}  )
+		index=`expr ${index} + 1`
+		cmp_str=$( ${cmp_tool} ${LASTGOOD_FILE} ${CHK_FILE}  2> /dev/null )
+		if [ "${index}" = "6" ]; then
+			echo "FATAL EERROR"
+			return ${index}
+		fi
+	done
+
+	output_result=$( rm ${CHK_FILE}  2> /dev/null )
+
+	echo "Success "
+	return ${index}
+}
+
+rm_file() {
+	[ -f ${1} ] && rm ${1}
+}
+
+case "$1" in
+  "all")
+#  	echo "------ [$1] Display all settings ------"
+  	if [ $# -eq 1 ] || [ "$2" = "hs" ]; then
+  		/bin/xmlconfig -os -hs
+	fi
+	if [ $# -eq 1 ] || [ "$2" = "cs" ]; then
+	        /bin/xmlconfig -os
+	fi
+	exit 0
+  	;;
+  "default")
+#  	echo "------ [$1] Restore to default configurationg ------"
+	if [ "$2" = "cs" ]; then
+		[ -f /bin/gen_reset_file ] && /bin/gen_reset_file
+		result=$(check_space "${LASTGOOD_FILE}" )
+		if [ "$?" = "1" ]; then
+			echo $result
+			return 1
+		fi
+		cfg_file=$( getProvinceConfigName )
+		/bin/xmlconfig -def_mib
+		rm_file $LASTGOOD_FILE
+		rm_file $HIDDEN_FILE
+		[ -f ${cfg_file} ] && /bin/xmlconfig -c ${cfg_file}
+		if [ "$?" = "0" ]; then
+			HID_arg=""
+			/bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file}
+			[ "$?" == 0 ] && result=$(/bin/xmlconfig -of -hid $LASTGOOD_FILE) && HID_arg=" -hid "
+			[ "$?" == 0 ] && /bin/xmlconfig -of $HIDDEN_FILE || /bin/xmlconfig -of $LASTGOOD_FILE
+			result=$( reset_check $HID_arg)
+			echo ${result} "$?"
+		else
+			/bin/xmlconfig -if $DEFAULT_FILE -nodef && result=$(/bin/xmlconfig -of -hid $LASTGOOD_FILE)
+			[ "$?" == 0 ] && /bin/xmlconfig -of $HIDDEN_FILE || /bin/xmlconfig -of $LASTGOOD_FILE
+		fi
+		echo "Reset CS to default configuration success."
+	elif [ "$2" = "hs" ]; then
+		result=$(check_space "${LASTGOOD_HS_FILE}")
+		if [ "$?" = "1" ]; then
+			echo $result
+			return 1
+		fi
+		cfg_file_pre=$( getProvinceConfigName )
+		/bin/xmlconfig -def_mib -hs
+		rm_file $LASTGOOD_HS_FILE
+		rm_file $HIDDEN_HS_FILE
+		/bin/xmlconfig -if $DEFAULT_HS_FILE -nodef && result=$(/bin/xmlconfig -of -hs -hid $LASTGOOD_HS_FILE)
+		[ "$?" == "0" ] && /bin/xmlconfig -of -hs $HIDDEN_HS_FILE || /bin/xmlconfig -of -hs $LASTGOOD_HS_FILE
+		cfg_file=$( getProvinceConfigName )
+		if [ ${cfg_file} != ${cfg_file_pre} ]; then
+			[ -f ${cfg_file} ] && /bin/xmlconfig -c ${cfg_file}
+			if [ "$?" = "0" ]; then
+				/bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file}
+				[ "$?" == 0 ] && result=$(/bin/xmlconfig -of -hid $LASTGOOD_FILE)
+				[ "$?" == 0 ] && /bin/xmlconfig -of $HIDDEN_FILE || /bin/xmlconfig -of $LASTGOOD_FILE
+			else
+				echo "Load Province setting Error!"
+			fi
+		fi
+		echo "Reset HS to default configuration success."
+	elif [ "$2" = "voip" ]; then
+		/bin/xmlconfig -def_voip_mib
+		[ "$?" == "0" ] && result=$(/bin/xmlconfig -of -hid $LASTGOOD_FILE)
+		[ "$?" == "0" ] && /bin/xmlconfig -of $HIDDEN_FILE || /bin/xmlconfig -of $LASTGOOD_FILE
+		echo "Reset VoIP to default configuration success."
+	else
+		echo "Restore to default configurationg fail."
+		/bin/sh $0 -h
+		exit 1
+	fi
+	echo "Please reboot system."
+	exit 0
+	;;
+  "get" | "gethw")
+# 	echo "------ [$1] Get a specific mib parameter from flash memory. ------"
+	if [ "$2" != "" ]; then
+		para=$2
+		if [ `echo $para | egrep $rename_mib_patten` ]; then
+			para=$rename_mib_name
+		fi
+		#echo "/bin/xmlconfig -g $para"
+		if [ `echo $para | egrep $specific_mib_patten` ]; then
+			/bin/xmlconfig -g $para | sed -r "s/$rename_mib_name+/$2/g" | sed -r "s/,+//g"
+		else
+			/bin/xmlconfig -g $para | sed -r "s/$rename_mib_name+/$2/g"
+		fi
+		if [ "$?" = "0" ]; then
+			exit 0
+		fi
+	else
+		/bin/sh $0 -h
+		exit 1
+	fi
+	;;
+  "set" | "sethw")
+ # 	echo "------ [$1] Set a specific mib parameter into flash memory. ------"
+  	if [ "$2" != "" ] && [ "$3" != "" ]; then
+		para=$2
+		if [ `echo $para | egrep $rename_mib_patten` ]; then
+			$para=$rename_mib_name
+		fi
+
+		if [ $# -eq 3 ]; then
+			var=$3
+		else
+			while [ $# -ge 3 ]
+			do
+				# for multiple decimal values: dec2hex and concatenate all setting value
+				if [ "$3" = "08" ] || [ "$3" = "09" ]; then
+					# 08 & 09 are not invalid octal number
+					var=$var$3
+				else
+					var=$var`printf "%02x" $3`
+				fi
+
+				shift
+				if [ $# -ge 3 ]; then var=$var","; fi
+			done
+		fi
+		#echo "/bin/xmlconfig -s $para $var"
+
+		HS_IDENTIFY="__hs__"
+		SET_OUTPUT=$(/bin/xmlconfig -s "$para" "$var")
+		if [ "$SET_OUTPUT" != "${SET_OUTPUT%$HS_IDENTIFY*}" ]; then
+			result=$(/bin/xmlconfig -of -hs -hid $LASTGOOD_HS_FILE)
+			[ "$?" == "0" ] && /bin/xmlconfig -of -hs $HIDDEN_HS_FILE || /bin/xmlconfig -of -hs $LASTGOOD_HS_FILE
+		else
+			result=$(/bin/xmlconfig -of -hid  $LASTGOOD_FILE)
+			[ "$?" == "0" ] && /bin/xmlconfig -of $HIDDEN_FILE || /bin/xmlconfig -of $LASTGOOD_FILE
+		fi
+		/bin/xmlconfig -g "$para"
+		exit 0
+	else
+		/bin/sh $0 -h
+		exit 1
+	fi
+	;;
+  "-h")
+		echo 'Usage: flash.sh [cmd]'
+		echo 'cmd:'
+		echo '  all <cs/hs>               : Show all settings.'
+		echo '  default <cs/hs>           : Restore to default configuration.'
+		echo '  get MIB-NAME              : get a specific mib parameter from flash memory.'
+		echo '  set MIB-NAME MIB-VALUE    : set a specific mib parameter into flash memory.'
+		echo
+		echo '  Note: When set the MIB_ARRAY or MIB_VALUE overflowed,'
+		echo '        xmlconfig will truncate the redundant part.'
+		echo '        Take signed integer for example:'
+		echo '        1. Set value=-6442450944(0xfffffffe80000000),'
+		echo '           and get value=-2147483648(0x80000000)'
+		echo '        2. Set value=-2147483649(0xffffffff7fffffff),'
+		echo '           and get value=2147483647(0x7fffffff)'
+		echo '        3. Set value=2147483648(0x80000000),'
+		echo '           and get value=-2147483648(0x80000000)'
+		echo '        4. Set value=4294967296(0x100000000), and get value=0(0x0)'
+		echo
+	;;
+  *)
+  	/bin/sh $0 -h
+		exit 1
+	;;
+esac

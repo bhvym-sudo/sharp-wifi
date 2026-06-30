@@ -1,0 +1,30 @@
+<Config Name="ROOT">
+ <Dir Name="MIB_TABLE">
+  <Value Name="FWD_CPU_SVLAN_ID" Value="4097"/>
+  <Value Name="FWD_BIND_OTHER_VLAN_ID" Value="4100"/>
+  <Value Name="FWD_BIND_INTERNET_VLAN_ID" Value="4099"/>
+  <Value Name="FWD_PROTO_BLOCK_VLAN_ID" Value="4098"/>
+  <Value Name="FWD_CPU_VLAN_ID" Value="4096"/>
+  <Value Name="UNTAG_WAN_VLAN_ID" Value="4202"/>
+  <Value Name="LAN_VLAN_ID2" Value="4201"/>
+  <Value Name="LAN_VLAN_ID1" Value="4200"/>
+ </Dir>
+ <Dir Name="SW_PORT_TBL"> <!--index=0-->
+  <Value Name="Enable" Value="1"/>
+  <Value Name="Duplex" Value="2"/>
+  <Value Name="Speed" Value="3"/>
+  <Value Name="LinkMode" Value="6"/>
+ </Dir>
+ <Dir Name="SW_PORT_TBL"> <!--index=1-->
+  <Value Name="Enable" Value="1"/>
+  <Value Name="Duplex" Value="2"/>
+  <Value Name="Speed" Value="3"/>
+  <Value Name="LinkMode" Value="6"/>
+  </Dir>
+ <Dir Name="SW_PORT_TBL"> <!--index=2-->
+  <Value Name="Enable" Value="1"/>
+  <Value Name="Duplex" Value="2"/>
+  <Value Name="Speed" Value="3"/>
+  <Value Name="LinkMode" Value="6"/>
+  </Dir>
+</Config>

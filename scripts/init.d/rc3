@@ -1,0 +1,13 @@
+/etc/scripts/rc_dev_voip
+/etc/rc_boot_dsp
+/etc/scripts/reset_default.sh
+configd&
+/bin/sh /etc/scripts/config_xmlconfig.sh -b
+/etc/scripts/chk_swver.sh
+/etc/scripts/chk_swver_2.sh
+/bin/checkomci
+echo `flash get PROVINCE_GPON_PLOAM_PWD_EMPTY_CHECK | sed 's/PROVINCE_GPON_PLOAM_PWD_EMPTY_CHECK=//g'` > /proc/gpon_password/gpon_password_empty_check
+/bin/initRGapi
+/etc/insdrv.sh
+if [ -f /bin/nice ]; then nice -n -18 /etc/runsdk.sh ; else /etc/runsdk.sh; fi
+/etc/scripts/insert_europa.sh

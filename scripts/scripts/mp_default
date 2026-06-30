@@ -1,0 +1,264 @@
+#!/bin/ash
+#
+# usage: mp.sh [cmd] ...
+#
+
+CONFIG_PATH="/var/config"
+CONFIG_MOUNT_POINT=""
+CONFIG_MTD=""
+DEFAULT_FILE="/etc/config_default.xml"
+DEFAULT_HS_FILE="/etc/config_default_hs.xml"
+LASTGOOD_FILE="/var/config/lastgood.xml"
+LASTGOOD_HS_FILE="/var/config/lastgood_hs.xml"
+MP_HS_FILE="/var/config/lastgood_mp_hs.xml"
+MP_HS_FILE2="/var/config/lastgood_mp_hs2.xml"
+PROVINCE_DIR="/etc/province/config"
+HW_PROVINCE_NAME="HW_PROVINCE_NAME"
+BACKUP_SUFFIX="bak"
+CHK_FILE="/tmp/lastgood_checkfile"
+CHK_HS_FILE="/tmp/lastgood_hs_checkfile"
+PWD=$(pwd)
+
+
+
+getProvinceConfigName() {
+	ret=0
+	ctc_prov=$( /bin/xmlconfig -g ${HW_PROVINCE_NAME} 2> /dev/null | sed "s/${HW_PROVINCE_NAME}=//" )
+	if [ "${ctc_prov}" = "" -o "${ctc_prov:0:3}" = "GET" ]; then
+		ctc_prov='_'
+		ret=1
+	fi
+	cfg_file=${PROVINCE_DIR}_${ctc_prov}.xml
+	echo ${cfg_file}
+	return ${ret}
+}
+
+get_cmp_tool(){
+	if [ -f "/bin/cmp" ]; then
+		echo "/bin/cmp"
+		return 0
+	elif [ -f "/bin/diff" ]; then
+		echo "/bin/diff"
+		return 0
+	fi
+	return -1
+}
+
+check_space(){
+	if [ "${1}" = "" -o ! -f ${1} ]; then
+		_FILE_PATH="/var/config"
+		file_size=100
+	else
+		_FILE_NAME="${1}"
+		_FILE_PATH=${_FILE_NAME%/*}
+		output_result=$(ls -s ${_FILE_NAME} )
+		set ${output_result}
+		file_size=${1}
+	fi
+	output_result=$( df ${_FILE_PATH} )
+	set ${output_result}
+	space_size=${11}
+	whole_space=${9}
+	if [ "${whole_space}" -gt "1000" ]; then
+		file_size=`expr ${file_size} + ${file_size}`
+	fi
+	if [ ${space_size} -lt ${file_size} -o ${space_size} = "0" ]; then
+		echo "FATAL ERROR: Not enough space ${space_size}/${file_size}"
+		return  1
+	fi
+	return 0
+}
+
+check_retired_block()
+{
+	output_result=$( cat /proc/yaffs | grep n_blocks_dead )
+	set ${output_result}
+	if [ "$2" != "0" ]; then
+		echo "Find bad block in flash!"
+		return 1
+	fi
+	return 0
+}
+
+reset_check() {
+	output_result=$( rm ${LASTGOOD_FILE}_${BACKUP_SUFFIX}  2> /dev/null )
+	cmp_tool=$( get_cmp_tool )
+	if [ "$?" != "0" ]; then
+		echo "No compare tool!"
+		return -1
+	fi
+	index=0
+	
+	cfg_file=$( getProvinceConfigName )
+	output_result=$( /bin/xmlconfig -def_mib )
+	output_result=$( [ -f ${cfg_file} ] && /bin/xmlconfig -c ${cfg_file} )
+	if [ "$?" != "0" ]; then
+		return -1
+	fi
+	output_result=$( /bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file} && /bin/xmlconfig -of ${CHK_FILE}  )
+	cmp_str=$( ${cmp_tool} ${LASTGOOD_FILE} ${CHK_FILE} 2> /dev/null )
+	while [ "${cmp_str}" != "" ]
+	do
+		output_result=$( cp -f ${CHK_FILE} ${LASTGOOD_FILE} 2> /dev/null )
+		output_result=$( /bin/xmlconfig -def_mib )
+		output_result=$( /bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file} && /bin/xmlconfig -of ${CHK_FILE}  )
+		index=`expr ${index} + 1`
+		cmp_str=$( ${cmp_tool} ${LASTGOOD_FILE} ${CHK_FILE}  2> /dev/null )
+		if [ "${index}" = "6" ]; then
+			echo "FATAL EERROR ${index}"
+			return 1
+		fi
+	done
+
+	#output_result=$( rm ${CHK_FILE}  2> /dev/null )
+
+	echo "Success ${index}"
+	return 0
+}
+
+#
+# get mtd info of config path
+#
+get_config_path_info() {
+	if [ ! -d ${CONFIG_PATH} ]; then
+		return 1
+	fi
+	output_result=$( df ${CONFIG_PATH} )
+	set ${output_result}
+	CONFIG_MOUNT_POINT=${8}
+	mtd_block_prefix="/dev/mtdblock"
+	mtd_prefix="/dev/mtd"
+    num=${CONFIG_MOUNT_POINT#$mtd_block_prefix}
+	CONFIG_MTD=${mtd_prefix}${num}
+}
+
+umount_config(){
+	umount ${CONFIG_PATH}
+}
+
+mount_config(){
+	output_result=$( mount | grep '/var/config' )
+	if [ "" == "${output_result}" ]; then
+		/etc/scripts/mnt_cfgfs.sh "-t yaffs2 -o tags-ecc-off" "config" "/var/config" 
+	fi
+}
+
+erase_config(){
+	flash_eraseall ${CONFIG_MTD}
+	sleep 1
+}
+
+#
+# erase and remount the config folder if  lost+found is not empty
+#
+chk_config_path_info(){
+	if [ ! -e "${CONFIG_PATH}/lost+found" ]; then
+		return 0
+	fi
+	lost_n_found=$(ls ${CONFIG_PATH}/lost+found )
+	if [ "${lost_n_found}" = "" ]; then
+		return 0
+	fi
+	# erase and 
+	umount_config
+	erase_config
+	mount_config
+
+	/bin/xmlconfig -of -hs $LASTGOOD_HS_FILE
+}
+
+get_setting(){
+	if [ ${1} = "" ]; then
+		return 1
+	fi
+	result=$( /bin/xmlconfig -g "${1}" 2> /dev/null  )
+	if [ "$?" != "0" -o "${result}" = "" -o "${result:0:3}" = "GET"  ]; then
+		return 1
+	fi
+	echo ${result#*=}
+	return 0
+}
+
+umount_n_check(){
+	output_result=$(umount_config)
+	output_result=$(mount_config)
+	[ -f ${CHK_HS_FILE} ] || /bin/xmlconfig -of -hs ${CHK_HS_FILE}
+	cmp_str=$( ${cmp_tool} ${LASTGOOD_HS_FILE} ${CHK_HS_FILE} 2> /dev/null )
+	if [ "${cmp_str}" != "" ]; then
+		echo "HS file ERROR!"
+		return 1
+	fi
+	output_result=$( rm ${CHK_HS_FILE}  2> /dev/null )
+
+	cmp_tool=$( get_cmp_tool )
+	[ -f ${CHK_FILE} ] || /bin/xmlconfig -of ${CHK_FILE}
+	cmp_str=$( ${cmp_tool} ${LASTGOOD_FILE} ${CHK_FILE} 2> /dev/null )
+	if [ "${cmp_str}" != "" ]; then
+		echo "CS file ERROR!"
+		return 1
+	fi
+	output_result=$( rm ${CHK_FILE}  2> /dev/null )
+
+	
+	return 0
+}
+
+ret_error_chk(){
+	if [ "$?" != "0" ]; then
+		echo "ERROR:" "${1}"
+		exit 1
+	fi
+	
+	# use $2 as message for return value = 0
+	if [ "$2" != "" ]; then
+		echo "$2"
+	fi
+}
+
+gen_mp_hs_file(){
+	cp -f "${LASTGOOD_HS_FILE}" "${MP_HS_FILE}"
+	cp -f "${LASTGOOD_HS_FILE}" "${LASTGOOD_HS_FILE}_${BACKUP_SUFFIX}"
+	[ -f "${MP_HS_FILE2}" ] && rm "${MP_HS_FILE2}"
+}
+
+main(){
+	cd /
+
+	get_config_path_info
+	ret_error_chk "CONFIG path Error!"
+	chk_config_path_info
+
+	
+	result=$(check_space "${LASTGOOD_FILE}" )
+	ret_error_chk  "$result"
+
+	result=$( check_retired_block )
+	ret_error_chk  "$result"
+
+	cfg_file=$( getProvinceConfigName )
+	ret_error_chk "Not province name setting exist!"
+	/bin/xmlconfig -def_mib
+	ret_error_chk "Default mib error!"
+	[ -f ${cfg_file} ] && /bin/xmlconfig -c ${cfg_file}
+	ret_error_chk "Province file Error!"
+	if [ "$?" = "0" ]; then
+		/bin/xmlconfig -def $DEFAULT_FILE -if ${cfg_file}  && /bin/xmlconfig -of $LASTGOOD_FILE 
+		ret_error_chk "Reset to Default Error!"
+		result=$( reset_check )
+		ret_error_chk "${result}" "${result}"
+	else 
+		/bin/xmlconfig -if $DEFAULT_FILE -nodef && /bin/xmlconfig -of $LASTGOOD_FILE
+	fi
+	gen_mp_hs_file
+	umount_n_check
+	ret_error_chk "Final check error!"
+	echo "Reset CS to default configuration success."
+	echo "Please reboot system."
+
+	cd $pwd
+}
+#-----------------------------------------------------
+
+main
+
+# vi: 
