@@ -1,4 +1,140 @@
 # Sharp-wifi firmware and working analysis
+
+## Wifi router details and specs
+- `cat /proc/version`
+  - Linux version 3.18.24 (lipeichao@terminal) (gcc version 4.8.5 20150209 (prerelease) (Realtek MSDK-4.8.5p1 Build 2536) ) #7 SMP Mon Aug 17 15:16:39 CST 2020 [luna SDK V3.3.0]
+
+- `cat /proc/cpuinfo`
+
+  - system type		: RTL9607C/RTL9603C
+    machine			: RTL9607C/RTL9603C
+    processor		: 0
+    cpu model		: MIPS interAptiv (multi) V2.0
+    BogoMIPS		: 597.60
+    wait instruction	: yes
+    microsecond timers	: yes
+    tlb_entries		: 64
+    extra interrupt vector	: yes
+    hardware watchpoint	: no
+    isa			: mips1 mips32r2
+    ASEs implemented	: mips16 mt eva
+    shadow register sets	: 1
+    kscratch registers	: 0
+    package			: 0
+    core			: 0
+    VPE			: 0
+    
+    processor		: 1
+    cpu model		: MIPS interAptiv (multi) V2.0
+    BogoMIPS		: 449.74
+    wait instruction	: yes
+    microsecond timers	: yes
+    tlb_entries		: 64
+    extra interrupt vector	: yes
+    hardware watchpoint	: no
+    isa			: mips1 mips32r2
+    ASEs implemented	: mips16 mt eva
+    shadow register sets	: 1
+    kscratch registers	: 0
+    package			: 0
+    core			: 0
+    VPE			: 1
+    
+    processor		: 2
+    cpu model		: MIPS interAptiv (multi) V2.0
+    BogoMIPS		: 597.60
+    wait instruction	: yes
+    microsecond timers	: yes
+    tlb_entries		: 64
+    extra interrupt vector	: yes
+    hardware watchpoint	: no
+    isa			: mips1 mips32r2
+    ASEs implemented	: mips16 mt eva
+    shadow register sets	: 1
+    kscratch registers	: 0
+    package			: 0
+    core			: 1
+    VPE			: 0
+    
+    processor		: 3
+    cpu model		: MIPS interAptiv (multi) V2.0
+    BogoMIPS		: 597.60
+    wait instruction	: yes
+    microsecond timers	: yes
+    tlb_entries		: 64
+    extra interrupt vector	: yes
+    hardware watchpoint	: no
+    isa			: mips1 mips32r2
+    ASEs implemented	: mips16 mt eva
+    shadow register sets	: 1
+    kscratch registers	: 0
+    package			: 0
+    core			: 1
+    VPE
+- `cat /proc/meminfo`
+  - MemTotal:         178592 kB<br>
+    MemFree:          118960 kB<br>
+    MemAvailable:     141560 kB<br>
+    Buffers:            5880 kB<br>
+    Cached:            25592 kB<br>
+    SwapCached:            0 kB<br>
+    Active:            20180 kB<br>
+    Inactive:          20708 kB<br>
+    Active(anon):       9436 kB<br>
+    Inactive(anon):       20 kB<br>
+    Active(file):      10744 kB<br>
+    Inactive(file):    20688 kB<br>
+    Unevictable:           0 kB<br>
+    Mlocked:               0 kB<br>
+    HighTotal:             0 kB<br>
+    HighFree:              0 kB<br>
+    LowTotal:         178592 kB<br>
+    LowFree:          118960 kB<br>
+    SwapTotal:             0 kB<br>
+    SwapFree:              0 kB<br>
+    Dirty:                 0 kB<br>
+    Writeback:             0 kB<br>
+    AnonPages:          9416 kB<br>
+    Mapped:            11944 kB<br>
+    Shmem:                40 kB<br>
+    Slab:              14744 kB<br>
+    SReclaimable:       3328 kB<br>
+    SUnreclaim:        11416 kB<br>
+    KernelStack:        1728 kB<br>
+    PageTables:          500 kB<br>
+    NFS_Unstable:          0 kB<br>
+    Bounce:                0 kB<br>
+    WritebackTmp:          0 kB<br>
+    CommitLimit:       89296 kB<br>
+    Committed_AS:      62156 kB<br>
+    VmallocTotal:    1015800 kB<br>
+    VmallocUsed:        1060 kB<br>
+    VmallocChunk:     999692 kB<br>
+
+- `free -h`
+  -                     total         used         free       shared      buffers
+                Mem:   178592        59548       119044           40        5880
+         -/+ buffers:    53668       124924
+               Swap:        0            0            0
+
+- `cat /proc/mtd`
+  -  dev:    size   erasesize  name<br>
+    mtd0: 000c0000 00020000 "boot"<br>
+    mtd1: 00020000 00020000 "env"<br>
+    mtd2: 00020000 00020000 "env2"<br>
+    mtd3: 00a80000 00020000 "config"<br>
+    mtd4: 00500000 00020000 "k0"<br>
+    mtd5: 01400000 00020000 "r0"<br>
+    mtd6: 00500000 00020000 "k1"<br>
+    mtd7: 01400000 00020000 "r1"<br>
+    mtd8: 00800000 00020000 "framework1"<br>
+    mtd9: 00800000 00020000 "framework2"<br>
+    mtd10: 03000000 00020000 "app"<br>
+    mtd11: 00001000 00020000 "Partition_011"<br>
+    mtd12: 00500000 00020000 "linux"<br>
+    mtd13: 01400000 00020000 "rootfs"<br>
+
+
 ## How i gained access to root shell using telnet
 - I explored the router configuration file more which i downloaded from router local website 192.168.1.1, I downloaded the file named lastgood.xml which is configuration file of router.
 - After digging through the configuration file , I found out credentials for telnet and ftp.
